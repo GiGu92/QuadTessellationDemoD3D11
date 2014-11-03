@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns:atg="http://atg.xbox.com" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{8e114980-c1a3-4ada-ad7c-83caadf5daeb}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+    <Filter Include="DXUT">
+      <UniqueIdentifier>{a43c5c25-0e86-4a20-b64a-883785ff74fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{2c3d4c8c-5d1a-459a-a05a-a4e4b608a44e}</UniqueIdentifier>
+      <Extensions>fx;fxh;hlsl</Extensions>
+    </Filter>
+    <Filter Include="Resource Files\Textures">
+      <UniqueIdentifier>{35bd6e67-d7b4-407d-92ce-51f3728f2547}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Textures\Displacement">
+      <UniqueIdentifier>{068b9adf-1cc7-4298-973e-b7d0949e60bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Textures\Normal">
+      <UniqueIdentifier>{347316d3-e8ac-4e56-b4da-ab984a8ca8c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Textures\Diffuse">
+      <UniqueIdentifier>{49bec234-b573-4276-bf4a-da6224debe50}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="TessellationDemoD3D11.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CLInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </CLInclude>
+    <ResourceCompile Include="TessellationDemoD3D11.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\Displaced.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\DisplacedAndShaded.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Shaded.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Tessellated.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Textures\Displacement\rock_displacement.jpg">
+      <Filter>Resource Files\Textures\Displacement</Filter>
+    </Image>
+    <Image Include="Textures\Diffuse\rock_diffuse.jpg">
+      <Filter>Resource Files\Textures\Diffuse</Filter>
+    </Image>
+    <Image Include="Textures\Normal\rock_normal.jpg">
+      <Filter>Resource Files\Textures\Normal</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
