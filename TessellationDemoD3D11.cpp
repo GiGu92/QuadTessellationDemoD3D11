@@ -758,7 +758,7 @@ void Render()
 		g_pImmediateContext->PSSetShader(g_pSolidPixelShader, NULL, 0);
 	}
 
-	g_pImmediateContext->DrawIndexed(36, 0, 0);
+	g_pImmediateContext->DrawIndexed(4, 0, 0);
 
 	//
 	// Present our back buffer to our front buffer
