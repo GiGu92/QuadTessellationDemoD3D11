@@ -43,33 +43,36 @@ struct VS_CP_INPUT
 {
 	float3 PosOS : POSITION;
 	float3 NormOS : NORMAL;
+	float2 TexCoord : TEXCOORD0;
 };
 
 struct VS_CP_OUTPUT
 {
 	float3 PosWS : POSITION;
 	float3 NormWS : NORMAL;
+	float2 TexCoord : TEXCOORD0;
 };
 
 struct HS_CONST_DATA_OUTPUT
 {
-	float Edges[4] : SV_TessFactor;
-	float Inside[2] : SV_InsideTessFactor;
+	float Edges[3] : SV_TessFactor;
+	float Inside[1] : SV_InsideTessFactor;
 };
 
 struct HS_CP_OUTPUT
 {
 	float3 PosWS : WORLDPOS;
-	float2 TexCoord : TEXCOORD;
+	float2 TexCoord : TEXCOORD0;
 	float3 NormWS : NORMAL;
 };
 
 struct DS_OUTPUT
 {
 	float4 Pos : SV_POSITION;
-	float2 TexCoord : TEXCOORD;
+	float2 TexCoord : TEXCOORD0;
 	float3 LightWS : LIGHTVECTORTS;
 	float3 ViewWS : VIEWVECTORS;
+	float3 NormWS : NORMAL;
 };
 
 //--------------------------------------------------------------------------------------
@@ -87,6 +90,7 @@ VS_CP_OUTPUT VS(VS_CP_INPUT input)
 	// Output position and normal
 	output.PosWS = PosWS.xyz;
 	output.NormWS = NormalWS;
+	output.TexCoord = input.TexCoord;
 
 	return output;
 }
@@ -95,22 +99,26 @@ VS_CP_OUTPUT VS(VS_CP_INPUT input)
 //--------------------------------------------------------------------------------------
 // Hull Shader constant function
 //--------------------------------------------------------------------------------------
-HS_CONST_DATA_OUTPUT ConstHS(InputPatch<VS_CP_OUTPUT, 4> ip, uint PatchID : SV_PrimitiveID)
+HS_CONST_DATA_OUTPUT ConstHS(InputPatch<VS_CP_OUTPUT, 3> ip, uint PatchID : SV_PrimitiveID)
 {
 	HS_CONST_DATA_OUTPUT output;
 
 	// Calculating distance adaptive tessellation factor
-	float maxTessellationDistance = 40;
+	/*float maxTessellationDistance = 40;
 	float minTessellationDistance = 10;
 	float distance = length(Eye - Pos) - minTessellationDistance;
 	if (distance < 0) distance = 0;
 	float t = distance / maxTessellationDistance;
 	if (t > 1) t = 1;
-	float adaptiveTessFactor = (1 - t) * TessellationFactor + t;
+	float adaptiveTessFactor = (1 - t) * TessellationFactor + t;*/
 
 	// Setting calculated tessellation factor globally for all tessellation factors
-	output.Edges[0] = output.Edges[1] = output.Edges[2] = output.Edges[3] = adaptiveTessFactor;
-	output.Inside[0] = output.Inside[1] = adaptiveTessFactor;
+	/*output.Edges[0] = output.Edges[1] = output.Edges[2] = output.Edges[3] = adaptiveTessFactor;
+	output.Inside[0] = output.Inside[1] = adaptiveTessFactor;*/
+
+	output.Edges[0] = output.Edges[1] = output.Edges[2] = TessellationFactor;
+	output.Inside[0] = TessellationFactor;
+
 
 	return output;
 }
@@ -119,12 +127,12 @@ HS_CONST_DATA_OUTPUT ConstHS(InputPatch<VS_CP_OUTPUT, 4> ip, uint PatchID : SV_P
 //--------------------------------------------------------------------------------------
 // Hull Shader
 //--------------------------------------------------------------------------------------
-[domain("quad")]
+[domain("tri")]
 [partitioning("fractional_odd")]
 [outputtopology("triangle_cw")]
-[outputcontrolpoints(4)]
+[outputcontrolpoints(3)]
 [patchconstantfunc("ConstHS")]
-HS_CP_OUTPUT HS(InputPatch<VS_CP_OUTPUT, 4> p,
+HS_CP_OUTPUT HS(InputPatch<VS_CP_OUTPUT, 3> p,
 	uint i : SV_OutputControlPointID,
 	uint PatchID : SV_PrimitiveID)
 {
@@ -133,6 +141,7 @@ HS_CP_OUTPUT HS(InputPatch<VS_CP_OUTPUT, 4> p,
 	// Pass through the position and the normal vectors
 	output.PosWS = p[i].PosWS;
 	output.NormWS = p[i].NormWS;
+	output.TexCoord = p[i].TexCoord;
 
 	return output;
 }
@@ -141,37 +150,40 @@ HS_CP_OUTPUT HS(InputPatch<VS_CP_OUTPUT, 4> p,
 //--------------------------------------------------------------------------------------
 // Domain Shader
 //--------------------------------------------------------------------------------------
-[domain("quad")]
+[domain("tri")]
 DS_OUTPUT DS(HS_CONST_DATA_OUTPUT input,
-	float2 UV : SV_DomainLocation,
-	const OutputPatch<HS_CP_OUTPUT, 4> quad)
+	float3 BaryCoords : SV_DomainLocation,
+	const OutputPatch<HS_CP_OUTPUT, 3> TriPatch)
 {
 	DS_OUTPUT output;
 
-	// Interpolating position in X and Z coordinates
-	float3 zPos1 = lerp(quad[0].PosWS, quad[3].PosWS, UV.y);
-	float3 zPos2 = lerp(quad[1].PosWS, quad[2].PosWS, UV.y);
-	float3 xzPos = lerp(zPos1, zPos2, UV.x);
+	// Interpolating position
+	float3 vWorldPos = BaryCoords.x * TriPatch[0].PosWS +
+						BaryCoords.y * TriPatch[1].PosWS +
+						BaryCoords.z * TriPatch[2].PosWS;
 
 	// Interpolating normal vector
-	float3 zNorm1 = lerp(quad[0].NormWS, quad[3].NormWS, UV.y);
-	float3 zNorm2 = lerp(quad[1].NormWS, quad[2].NormWS, UV.y);
-	float3 xzNorm = lerp(zNorm1, zNorm2, UV.x);
+	float3 vNormal = BaryCoords.x * TriPatch[0].NormWS +
+					 BaryCoords.y * TriPatch[1].NormWS +
+					 BaryCoords.z * TriPatch[2].NormWS;
+	vNormal = normalize(vNormal);
+	output.NormWS = vNormal;
+
+	// Interpolating and outputting texture coordinates
+	output.TexCoord = BaryCoords.x * TriPatch[0].TexCoord +
+					  BaryCoords.y * TriPatch[1].TexCoord +
+					  BaryCoords.z * TriPatch[2].TexCoord;
 
 	// Displacing generated vertexes
-	float3 finalPos = xzPos;
-	float4 texSample = texDisplacement.SampleLevel(samPoint, UV, 0);
-	finalPos += xzNorm * texSample.r * Scaling * DisplacementLevel;
-	output.Pos = mul(float4(finalPos, 1), mul(View, Projection));
+	float4 texSample = texDisplacement.SampleLevel(samPoint, output.TexCoord, 0);
+	vWorldPos += /*vNormal * */ float3(0,1,0) * texSample.r * Scaling * DisplacementLevel;
+	output.Pos = mul(float4(vWorldPos, 1), mul(View, Projection));
 
 	// Calculating light vector
-	output.LightWS = LightPos - finalPos;
+	output.LightWS = LightPos - vWorldPos;
 
 	// Calculating view vector
-	output.ViewWS = Eye - finalPos;
-
-	// Outputting texture coordinates
-	output.TexCoord = UV;
+	output.ViewWS = Eye - vWorldPos;	
 
 	return output;
 }
@@ -218,7 +230,8 @@ float4 PS(DS_OUTPUT input) : SV_Target
 	float3 LightTS = normalize(input.LightWS);
 	float3 ViewTS = normalize(input.ViewWS);
 
-	float4 finalColor = ComputeIllumination(input.TexCoord, LightTS, ViewTS);
+	//float4 finalColor = ComputeIllumination(input.TexCoord, LightTS, ViewTS);
+	float4 finalColor = float4(input.TexCoord, 0, 1);
 
 	return finalColor;
 }
