@@ -230,7 +230,7 @@ float4 PS(DS_OUTPUT input) : SV_Target
 	float3 LightTS = normalize(input.LightWS);
 	float3 ViewTS = normalize(input.ViewWS);
 
-	//float4 finalColor = ComputeIllumination(input.TexCoord, LightTS, ViewTS);
+	// float4 finalColor = ComputeIllumination(input.TexCoord, LightTS, ViewTS);
 	float4 finalColor = float4(input.TexCoord, 0, 1);
 
 	return finalColor;
