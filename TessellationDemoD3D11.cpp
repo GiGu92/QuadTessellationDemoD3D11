@@ -21,8 +21,8 @@ struct SimpleVertex
 	XMFLOAT3 Pos;
 	XMFLOAT2 TexCoord;
 	XMFLOAT3 Normal;
-	XMFLOAT3 Binormal;
-	XMFLOAT3 Tangent;
+	//Binormal;
+	//XMFLOAT3 Tangent;
 };
 
 struct Camera
@@ -351,14 +351,21 @@ HRESULT InitDevice()
 	}
 
 	// Define the input layout
+	/*D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+	{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};*/
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
+
 	UINT numElements = ARRAYSIZE(layout);
 
 	// Create the input layout
@@ -440,10 +447,10 @@ HRESULT InitDevice()
 	XMFLOAT3 planeTangent = XMFLOAT3(0.0f, 0.0f, 1.0f);
 	SimpleVertex vertices[] =
 	{
-		{ XMFLOAT3(-1.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), planeBinormal, planeTangent },
-		{ XMFLOAT3(1.0f, 0.0f, -1.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), planeBinormal, planeTangent },
-		{ XMFLOAT3(1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), planeBinormal, planeTangent },
-		{ XMFLOAT3(-1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), planeBinormal, planeTangent }
+		{ XMFLOAT3(-1.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f)/*, planeBinormal, planeTangent */ },
+		{ XMFLOAT3(1.0f, 0.0f, -1.0f), XMFLOAT2(1.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f)/*, planeBinormal, planeTangent */ },
+		{ XMFLOAT3(1.0f, 0.0f, 1.0f), XMFLOAT2(1.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f)/*, planeBinormal, planeTangent */ },
+		{ XMFLOAT3(-1.0f, 0.0f, 1.0f), XMFLOAT2(0.0f, 1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f)/*, planeBinormal, planeTangent */ }
 	};
 
 	D3D11_BUFFER_DESC bd;
@@ -467,7 +474,8 @@ HRESULT InitDevice()
 	// Create index buffer
 	WORD indices[] =
 	{
-		3, 2, 1, 0
+		3, 2, 0,
+		0, 2, 1
 	};
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof(WORD)* ARRAYSIZE(indices);
@@ -482,7 +490,7 @@ HRESULT InitDevice()
 	g_pImmediateContext->IASetIndexBuffer(g_pIndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 
 	// Set primitive topology
-	g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
+	g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_3_CONTROL_POINT_PATCHLIST);
 
 	// Create the constant buffer
 	bd.Usage = D3D11_USAGE_DEFAULT;
@@ -758,7 +766,7 @@ void Render()
 		g_pImmediateContext->PSSetShader(g_pSolidPixelShader, NULL, 0);
 	}
 
-	g_pImmediateContext->DrawIndexed(36, 0, 0);
+	g_pImmediateContext->DrawIndexed(6, 0, 0);
 
 	//
 	// Present our back buffer to our front buffer
