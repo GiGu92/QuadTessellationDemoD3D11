@@ -60,5 +60,14 @@
     <Image Include="Textures\Normal\rock_normal.jpg">
       <Filter>Resource Files\Textures\Normal</Filter>
     </Image>
+    <Image Include="Textures\Diffuse\rock2_diffuse.jpg">
+      <Filter>Resource Files\Textures\Diffuse</Filter>
+    </Image>
+    <Image Include="Textures\Displacement\rock2_displacement.jpg">
+      <Filter>Resource Files\Textures\Displacement</Filter>
+    </Image>
+    <Image Include="Textures\Normal\rock2_normal.jpg">
+      <Filter>Resource Files\Textures\Normal</Filter>
+    </Image>
   </ItemGroup>
 </Project>

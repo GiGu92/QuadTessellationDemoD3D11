@@ -391,8 +391,11 @@
     <FxCompile Include="Shaders\Tessellated.hlsl" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Textures\Diffuse\rock2_diffuse.jpg" />
     <Image Include="Textures\Diffuse\rock_diffuse.jpg" />
+    <Image Include="Textures\Displacement\rock2_displacement.jpg" />
     <Image Include="Textures\Displacement\rock_displacement.jpg" />
+    <Image Include="Textures\Normal\rock2_normal.jpg" />
     <Image Include="Textures\Normal\rock_normal.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
