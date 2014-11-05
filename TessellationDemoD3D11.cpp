@@ -443,8 +443,8 @@ HRESULT InitDevice()
 		return hr;
 
 	// Create vertex buffer
-	XMFLOAT3 planeBinormal = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	XMFLOAT3 planeTangent = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	//XMFLOAT3 planeBinormal = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	//XMFLOAT3 planeTangent = XMFLOAT3(0.0f, 0.0f, 1.0f);
 	SimpleVertex vertices[] =
 	{
 		{ XMFLOAT3(-1.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f), XMFLOAT3(0.0f, 1.0f, 0.0f)/*, planeBinormal, planeTangent */},

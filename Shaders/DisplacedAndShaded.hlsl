@@ -42,15 +42,15 @@ cbuffer ConstantBuffer : register(b0)
 struct VS_CP_INPUT
 {
 	float3 PosOS : POSITION;
-	float3 NormOS : NORMAL;
-	float2 TexCoord : TEXCOORD0;
+	float2 TexCoord : TEXCOORD0; 
+	float3 NormOS : NORMAL0;
 };
 
 struct VS_CP_OUTPUT
 {
 	float3 PosWS : POSITION;
-	float3 NormWS : NORMAL;
 	float2 TexCoord : TEXCOORD0;
+	float3 NormWS : NORMAL0;
 };
 
 struct HS_CONST_DATA_OUTPUT
@@ -63,7 +63,7 @@ struct HS_CP_OUTPUT
 {
 	float3 PosWS : WORLDPOS;
 	float2 TexCoord : TEXCOORD0;
-	float3 NormWS : NORMAL;
+	float3 NormWS : NORMAL0;
 };
 
 struct DS_OUTPUT
@@ -72,7 +72,7 @@ struct DS_OUTPUT
 	float2 TexCoord : TEXCOORD0;
 	float3 LightWS : LIGHTVECTORTS;
 	float3 ViewWS : VIEWVECTORS;
-	float3 NormWS : NORMAL;
+	float3 NormWS : NORMAL0;
 };
 
 //--------------------------------------------------------------------------------------
@@ -174,9 +174,9 @@ DS_OUTPUT DS(HS_CONST_DATA_OUTPUT input,
 					  BaryCoords.y * TriPatch[1].TexCoord +
 					  BaryCoords.z * TriPatch[2].TexCoord;
 
-	// Displacing generated vertexes
+	// Displacing generated vertices
 	float4 texSample = texDisplacement.SampleLevel(samPoint, output.TexCoord, 0);
-	vWorldPos += /*vNormal * */ float3(0,1,0) * texSample.r * Scaling * DisplacementLevel;
+	vWorldPos += vNormal * texSample.r * Scaling * DisplacementLevel;
 	output.Pos = mul(float4(vWorldPos, 1), mul(View, Projection));
 
 	// Calculating light vector
@@ -230,8 +230,8 @@ float4 PS(DS_OUTPUT input) : SV_Target
 	float3 LightTS = normalize(input.LightWS);
 	float3 ViewTS = normalize(input.ViewWS);
 
-	// float4 finalColor = ComputeIllumination(input.TexCoord, LightTS, ViewTS);
-	float4 finalColor = float4(input.TexCoord, 0, 1);
+	float4 finalColor = ComputeIllumination(input.TexCoord, LightTS, ViewTS);
+	//float4 finalColor = float4(input.TexCoord, 0, 1);
 
 	return finalColor;
 }
