@@ -43,14 +43,18 @@ struct VS_CP_INPUT
 {
 	float3 PosOS : POSITION;
 	float2 TexCoord : TEXCOORD0; 
-	float3 NormOS : NORMAL0;
+	float3 NormOS : NORMAL;
+	float3 BinormalOS : BINORMAL;
+	float3 TangentOS : TANGENT;
 };
 
 struct VS_CP_OUTPUT
 {
 	float3 PosWS : POSITION;
 	float2 TexCoord : TEXCOORD0;
-	float3 NormWS : NORMAL0;
+	float3 NormWS : NORMAL;
+	float3 LightTS : LIGHTVECTORS;
+	float3 ViewTS : VIEWVECTORS;
 };
 
 struct HS_CONST_DATA_OUTPUT
@@ -63,16 +67,20 @@ struct HS_CP_OUTPUT
 {
 	float3 PosWS : WORLDPOS;
 	float2 TexCoord : TEXCOORD0;
-	float3 NormWS : NORMAL0;
+	float3 NormWS : NORMAL;
+	float3 LightTS : LIGHTVECTORS;
+	float3 ViewTS : VIEWVECTORS;
 };
 
 struct DS_OUTPUT
 {
 	float4 Pos : SV_POSITION;
 	float2 TexCoord : TEXCOORD0;
-	float3 LightWS : LIGHTVECTORTS;
-	float3 ViewWS : VIEWVECTORS;
-	float3 NormWS : NORMAL0;
+	//float3 LightWS : LIGHTVECTORTS;
+	//float3 ViewWS : VIEWVECTORS;
+	float3 NormWS : NORMAL;
+	float3 LightTS : LIGHTVECTORTS;
+	float3 ViewTS : VIEWVECTORS;
 };
 
 //--------------------------------------------------------------------------------------
@@ -82,15 +90,31 @@ VS_CP_OUTPUT VS(VS_CP_INPUT input)
 {
 	VS_CP_OUTPUT output;
 	
-	// Compute position and normal in world space
+	// Compute world space vectors
 	float3 PosWS = mul(input.PosOS, (float3x3) World);
 	float3 NormalWS = mul(input.NormOS, (float3x3) World);
-	NormalWS = normalize(NormalWS);
+	float3 BinormalWS = mul(input.BinormalOS, (float3x3) World);
+	float3 TangentWS = mul(input.TangentOS, (float3x3) World);
 
-	// Output position and normal
-	output.PosWS = PosWS.xyz;
+	// Normalize vectors;
+	NormalWS = normalize(NormalWS);
+	BinormalWS = normalize(BinormalWS);
+	TangentWS = normalize(TangentWS);
+
+	// Output position normal and texture coordinates
+	output.PosWS = PosWS;
 	output.NormWS = NormalWS;
 	output.TexCoord = input.TexCoord;
+
+	// Calculate tangent basis
+	float3x3 WorldToTangent = float3x3(TangentWS, BinormalWS, NormalWS);
+		//WorldToTangent = transpose(WorldToTangent);
+
+	// Calculate tangent space vectors for lighting
+	float3 LightWS = LightPos.xyz - PosWS;
+	output.LightTS = mul(WorldToTangent, LightWS);
+	float3 ViewWS = Eye - PosWS;
+	output.ViewTS = mul(WorldToTangent, ViewWS);
 
 	return output;
 }
@@ -119,7 +143,6 @@ HS_CONST_DATA_OUTPUT ConstHS(InputPatch<VS_CP_OUTPUT, 3> ip, uint PatchID : SV_P
 	output.Edges[0] = output.Edges[1] = output.Edges[2] = TessellationFactor;
 	output.Inside[0] = TessellationFactor;
 
-
 	return output;
 }
 
@@ -140,8 +163,10 @@ HS_CP_OUTPUT HS(InputPatch<VS_CP_OUTPUT, 3> p,
 
 	// Pass through the position and the normal vectors
 	output.PosWS = p[i].PosWS;
-	output.NormWS = p[i].NormWS;
 	output.TexCoord = p[i].TexCoord;
+	output.NormWS = p[i].NormWS;
+	output.LightTS = p[i].LightTS;
+	output.ViewTS = p[i].ViewTS;
 
 	return output;
 }
@@ -174,16 +199,24 @@ DS_OUTPUT DS(HS_CONST_DATA_OUTPUT input,
 					  BaryCoords.y * TriPatch[1].TexCoord +
 					  BaryCoords.z * TriPatch[2].TexCoord;
 
+	// Interpolating and outputting tangent space View and Light vectors
+	output.LightTS = BaryCoords.x * TriPatch[0].LightTS +
+					 BaryCoords.y * TriPatch[1].LightTS +
+					 BaryCoords.z * TriPatch[2].LightTS;
+	output.ViewTS = BaryCoords.x * TriPatch[0].ViewTS +
+					BaryCoords.y * TriPatch[1].ViewTS +
+					BaryCoords.z * TriPatch[2].ViewTS;
+
 	// Displacing generated vertices
 	float4 texSample = texDisplacement.SampleLevel(samPoint, output.TexCoord, 0);
 	vWorldPos += vNormal * texSample.r * Scaling * DisplacementLevel;
 	output.Pos = mul(float4(vWorldPos, 1), mul(View, Projection));
 
 	// Calculating light vector
-	output.LightWS = LightPos - vWorldPos;
+	//output.LightWS = LightPos - vWorldPos;
 
 	// Calculating view vector
-	output.ViewWS = Eye - vWorldPos;	
+	//output.ViewWS = Eye - vWorldPos;	
 
 	return output;
 }
@@ -198,6 +231,7 @@ float4 ComputeIllumination(float2 texCoord, float3 vLightTS, float3 vViewTS)
 {
 	// Sample the normal from the normal map for the given texture sample:
 	float3 vNormalTS = normalize(texNormal.Sample(samLinear, texCoord) * 2.0 - 1.0);
+	vNormalTS.y = -vNormalTS.y;
 
 	// Setting base color
 	float4 cBaseColor = texDiffuse.Sample(samLinear, texCoord);
@@ -205,17 +239,23 @@ float4 ComputeIllumination(float2 texCoord, float3 vLightTS, float3 vViewTS)
 	// Compute ambient component
 	float ambientPower = 0.1f;
 	float4 ambientColor = float4(1, 1, 1, 1);
-	float4 cAmbient = ambientColor * ambientPower;
+		float4 cAmbient = ambientColor * ambientPower;
 
-	// Compute diffuse color component:
-	float4 cDiffuse = saturate(dot(vNormalTS, vLightTS));
+		// Compute diffuse color component:
+		float4 cDiffuse = saturate(dot(vNormalTS, vLightTS));
 
 	// Compute the specular component if desired:  
-	float3 R = normalize (2 * dot(vLightTS, vNormalTS) * vNormalTS - vLightTS);
-	float shininess = 20;
+	/*float3 R = normalize (2 * dot(vLightTS, vNormalTS) * vNormalTS - vLightTS);
+	float shininess = 50;
 	float4 specularColor = float4(1, 1, 1, 1);
-	float4 cSpecular = pow(saturate(dot(R, vViewTS)), shininess) * specularColor;
-		
+	float4 cSpecular = pow(saturate(dot(R, vViewTS)), shininess) * specularColor;*/
+	float3 H = normalize(vLightTS + vViewTS);
+	float NdotH = max(0, dot(vNormalTS, H));
+	float shininess = 40;
+	float specularPower = 100000;
+	float4 specularColor = float4(1, 1, 1, 1);
+	float4 cSpecular = pow(saturate(NdotH), shininess) * specularColor * specularPower;
+
 	// Composite the final color:
 	float4 cFinalColor = (cAmbient + cDiffuse) * cBaseColor + cSpecular;
 
@@ -227,8 +267,8 @@ float4 ComputeIllumination(float2 texCoord, float3 vLightTS, float3 vViewTS)
 //--------------------------------------------------------------------------------------
 float4 PS(DS_OUTPUT input) : SV_Target
 {
-	float3 LightTS = normalize(input.LightWS);
-	float3 ViewTS = normalize(input.ViewWS);
+	float3 LightTS = normalize(input.LightTS);
+	float3 ViewTS = normalize(input.ViewTS);
 
 	float4 finalColor = ComputeIllumination(input.TexCoord, LightTS, ViewTS);
 	//float4 finalColor = float4(input.TexCoord, 0, 1);
