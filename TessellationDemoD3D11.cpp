@@ -92,6 +92,7 @@ XMMATRIX                            g_View;
 XMMATRIX                            g_Projection;
 Camera                              g_Camera;
 bool                                g_IsWireFrame = false;
+bool								g_IsRotating = false;
 float                               g_TessellationFactor = 64.0f;
 float                               g_Scaling = 3.0f;
 float                               g_DisplacementLevel = 0.1f;
@@ -699,6 +700,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				g_pImmediateContext->RSSetState(NULL);
 			}
 		}
+		if (wParam == 'Q')
+		{
+			g_IsRotating = !g_IsRotating;
+		}
 		if (wParam == VK_UP && g_TessellationFactor <= 64.0f)
 			g_TessellationFactor += 0.5f;
 		if (wParam == VK_DOWN && g_TessellationFactor >= 1.0f)
@@ -746,6 +751,7 @@ void Render()
 	static float t = 0.0f;
 	static float oldt = 0.0f;
 	static float dt = 0.0f;
+	static float rt = 0.0f;
 	if (g_driverType == D3D_DRIVER_TYPE_REFERENCE)
 	{
 		t += (float)XM_PI * 0.0125f;
@@ -759,6 +765,7 @@ void Render()
 		oldt = t;
 		t = (dwTimeCur - dwTimeStart) / 1000.0f;
 		dt = t - oldt;
+		if (g_IsRotating) rt += dt;
 	}
 
 	// Update camera and view matrix
@@ -795,7 +802,7 @@ void Render()
 	// Update matrix variables and lighting variables
 	//
 	ConstantBuffer cb1;
-	cb1.mWorld = XMMatrixTranspose(g_World) * XMMatrixScaling(g_Scaling, g_Scaling, g_Scaling);
+	cb1.mWorld = XMMatrixTranspose(g_World) * XMMatrixScaling(g_Scaling, g_Scaling, g_Scaling) * XMMatrixRotationY(rt);
 	cb1.mView = XMMatrixTranspose(g_View);
 	cb1.mProjection = XMMatrixTranspose(g_Projection);
 	cb1.vPos = XMFLOAT4(0, 0, 0, 1);

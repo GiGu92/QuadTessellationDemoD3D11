@@ -257,7 +257,7 @@ float4 ComputeIllumination(float2 texCoord, float3 vLightTS, float3 vViewTS)
 	float4 cSpecular = pow(saturate(NdotH), shininess) * specularColor * specularPower;
 
 	// Composite the final color:
-	float4 cFinalColor = (cAmbient + cDiffuse) * cBaseColor + cSpecular;
+	float4 cFinalColor = (cAmbient + cDiffuse)/* * cBaseColor + cSpecular*/;
 
 	return cFinalColor;
 }
